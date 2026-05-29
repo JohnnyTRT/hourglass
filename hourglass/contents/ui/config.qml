@@ -84,7 +84,7 @@ Kirigami.FormLayout {
 
 	//declaration for the list of wallpapers
 	Kirigami.AbstractCard {
-		implicitWidth: 500
+		implicitWidth: 300
 		implicitHeight: 500
 
 		contentItem: ListView {
@@ -284,6 +284,21 @@ Kirigami.FormLayout {
 			}
 		}
 	}
+
+	//seperater for aesthetics
+	Kirigami.Separator {
+		Layout.fillWidth: true
+		Layout.topMargin: Kirigami.Units.largeSpacing
+		Layout.bottomMargin: Kirigami.Units.smallSpacing
+	}
+	//text to mention update time
+	Controls.Label {
+		text: "After you adjust wallpapers or times and hit apply, it will take up to 1 minute to see changes on your actual desktop wallpaper."
+		opacity: 0.7
+		Layout.fillWidth: true
+		wrapMode: Text.WordWrap
+	}
+
 
 	//dialogue to throw if attempting to add past 23:59
 	Kirigami.PromptDialog {

@@ -16,6 +16,10 @@ WallpaperItem {
 	//what wallpaper is coming next? only used for smooth
 	property int nextIndex: 0
 
+
+	//defaultImage file path
+	property url defaultImage: Qt.resolvedUrl("..images/hourglassDefault.png")
+
 	//debug code ------------------
 /*	property int tickCount: 0
 
@@ -34,7 +38,7 @@ WallpaperItem {
 		id: wallPaperImage
 		anchors.fill: parent
 		fillMode: Image.PreserveAspectCrop
-		source: root.items.length > 0 ? root.items[root.currentIndex].path : "../images/hourglassDefault.png"
+		source: root.items.length > 0 ? root.items[root.currentIndex].path : root.defaultImage
 		opacity: 1.0
 	}
 
@@ -42,7 +46,7 @@ WallpaperItem {
 		id: nextImage
 		anchors.fill: parent
 		fillMode: Image.PreserveAspectCrop
-		source: root.items.length > 0 ? root.items[root.nextIndex].path : "../images/hourglassDefault.png"
+		source: root.items.length > 0 ? root.items[root.nextIndex].path : root.defaultImage
 		opacity: 0.0
 	}
 
