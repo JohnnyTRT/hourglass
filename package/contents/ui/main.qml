@@ -13,9 +13,12 @@ WallpaperItem {
 	//what wallpaper is currently displayed?
 	property int currentIndex: 0
 
+	//what wallpaper is coming next? only used for smooth
+	property int nextIndex: 0
+
 	//debug code ------------------
-	//property int tickCount: 0
-/*
+/*	property int tickCount: 0
+
 	Text {
 		anchors.top: parent.top
 		anchors.left: parent.left
@@ -24,27 +27,38 @@ WallpaperItem {
 		font.pixelSize: 32  
 		z:999
 	}
-	*/
+	*/	
 
-	//actual desktop image
+	//actual desktop image on top
 	Image {
 		id: wallPaperImage
 		anchors.fill: parent
 		fillMode: Image.PreserveAspectCrop
 		source: root.items.length > 0 ? root.items[root.currentIndex].path : "../images/hourglassDefault.png"
+		opacity: 1.0
+	}
+
+	Image {
+		id: nextImage
+		anchors.fill: parent
+		fillMode: Image.PreserveAspectCrop
+		source: root.items.length > 0 ? root.items[root.nextIndex].path : "../images/hourglassDefault.png"
+		opacity: 0.0
 	}
 
 	//when program starts
 	Component.onCompleted: {
 		root.loadConfig()
 		root.currentIndex = root.findCurrent()
+		root.nextIndex = findNext()
 		root.updateWallpaper()
 	}
 
 
 	//loop, you can change interval to check for updates/update wallpaper quicker, i defaulted this to 60000 which is ~1 minute updates
+	//If you do change the interval though, you cannot go below 1 minute with current algorithm because everything is tracked to minutes placed
 	Timer {
-		interval: 5000
+		interval: 60000
 		running: true
 		repeat: true
 		triggeredOnStart: true
@@ -66,7 +80,7 @@ WallpaperItem {
 			root.items = []
 		}
 
-		root.mode = root.configuration.Mode ?? 0
+		root.mode = root.configuration.Mode
 	}
 
 	//code to find what wallpaper should currently be displayed
@@ -78,6 +92,17 @@ WallpaperItem {
 			}
 		}
 		return root.items.length - 1
+	}
+
+	//code to find what wallpaper is next, only really used by smooth
+	function findNext(){
+		const current = root.currentIndex
+		if(current >= root.items.length - 1){
+			return 0 
+		}else{
+			return root.currentIndex + 1 
+		}
+
 	}
 
 	//code to get current time
@@ -108,11 +133,16 @@ WallpaperItem {
 
 	//updateWallpaper function
 	function updateWallpaper(){
-		rigidUpdate()
+		if(root.mode == 0){
+			rigidUpdate()
+		}else{
+			smoothUpdate()
+		}
 	}
 
 	//rigid update
 	function rigidUpdate(){
+		nextImage.opacity = 0.0
 		const newCurrentIndex = root.findCurrent()
 		if(newCurrentIndex !== root.currentIndex) {
 			root.currentIndex = newCurrentIndex
@@ -121,7 +151,44 @@ WallpaperItem {
 
 	//smooth update
 	function smoothUpdate(){
+		let normalizedDistribution = 0
+		//find currentIndex, if it has changed update both currentIndex and next index
+		const newCurrentIndex = root.findCurrent()
+		if(newCurrentIndex !== root.currentIndex){
+			root.currentIndex = newCurrentIndex
+			root.nextIndex = findNext()
+		}
 
+		//get the current time
+		let now = getTime()
+
+		//get the time that the current image started
+		let currentImageTime = timeToMinutes(root.items[root.currentIndex].time)
+
+		//get the time that the next image starts
+		let nextImageTime = timeToMinutes(root.items[root.nextIndex].time)
+
+		if(nextImageTime <= currentImageTime){
+			nextImageTime += 24*60
+		}
+
+		if(now < currentImageTime){
+			now += 24*60
+		}
+
+		//find difference between next image start and current image start
+		let difference = nextImageTime - currentImageTime
+
+		//find where we are at on that difference
+		let progress = now - currentImageTime
+
+		//find a value between 0-1 that represents how far along we are in the transition
+		normalizedDistribution = progress / difference
+
+		
+		//make opacity that normalized distribution
+		//add clamp to 0 or 1 for safety just in case
+		nextImage.opacity = Math.max(0, Math.min(normalizedDistribution, 1))
 	}
 
 }

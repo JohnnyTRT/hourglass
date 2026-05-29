@@ -57,6 +57,7 @@ Kirigami.FormLayout {
 		
 		//update mode
 		root.currentMode = cfg_Mode
+		modeBox.currentIndex = root.currentMode
 	}
 
 	//save config function to save program values into actual configuration files
@@ -73,10 +74,18 @@ Kirigami.FormLayout {
 		Layout.fillWidth: true
 	}
 
+	Controls.Label {
+		text: "Double-click an entry to change its image."
+		opacity: 0.7
+		Layout.fillWidth: true
+		wrapMode: Text.WordWrap
+	}
+
+
 	//declaration for the list of wallpapers
 	Kirigami.AbstractCard {
 		implicitWidth: 500
-		implicitHeight: 300
+		implicitHeight: 500
 
 		contentItem: ListView {
 			model: entryList
@@ -152,6 +161,12 @@ Kirigami.FormLayout {
 						commitTime()
 					}
 
+					onActiveFocusChanged: {
+						if(!activeFocus){
+							commitTime()
+						}
+					}
+
 				}
 			}
 
@@ -224,29 +239,48 @@ Kirigami.FormLayout {
 
 	//bottom buttons layout
 	RowLayout {
-		spacing: 8
-		Controls.Button {
-			text: "Add Wallpaper"
-			onClicked: fileDialog.open()
-		}
+		spacing: 80
 
-		Controls.Button {
-			text: "Remove Last"
-			enabled: root.items.length > 1 
-			onClicked: root.removeLastWallpaper()
-		}
-		Controls.ComboBox {
-			id: modeBox
-
-			model: ["Rigid", "Smooth"]
-
-			Component.onCompleted: {
-				modeBox.currentIndex = root.currentMode
+		ColumnLayout {
+			Controls.Label {
+				text: "Add a new wallpaper"
+				font: Kirigami.Theme.smallFont
+				opacity: 0.7
 			}
+			Controls.Button {
+				text: "Add Wallpaper"
+				onClicked: fileDialog.open()
+			}
+		}
 
-			onActivated: {
-				root.currentMode = modeBox.currentIndex
-				root.saveConfig()
+		ColumnLayout {
+			Controls.Label{
+				text: "Remove last wallpaper"
+				font: Kirigami.Theme.smallFont 
+				opacity: 0.7
+			}
+			Controls.Button {
+				text: "Remove Last"
+				enabled: root.items.length > 1 
+				onClicked: root.removeLastWallpaper()
+			}
+		}
+
+		ColumnLayout {
+			Controls.Label{
+				text: "Transition Mode"
+				font: Kirigami.Theme.smallFont 
+				opacity: 0.7
+			}
+			Controls.ComboBox {
+				id: modeBox
+
+				model: ["Rigid", "Smooth"]
+
+				onActivated: {
+					root.currentMode = modeBox.currentIndex
+					root.saveConfig()
+				}
 			}
 		}
 	}

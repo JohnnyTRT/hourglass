@@ -8,7 +8,7 @@
 	
 	<group name="General">
 		<entry name="Wallpapers" type="String">
-			<default>[{"path":"../images/hourglassDefault.png", "time": "00:00"},{"path":"../images/1.png", "time": "10:00"},{"path":"../images/2.png", "time": "20:00"}]</default>
+			<default>[{"path":"../images/hourglassDefault.png", "time": "00:00"}]</default>
 		</entry>
 
 
