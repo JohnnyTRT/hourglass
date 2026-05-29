@@ -16,9 +16,6 @@
 			<default>0</default>
 		</entry>
 
-		<entry name="Update" type="Int">
-			<default>0</default>
-		</entry>
 
 	</group>
 

@@ -10,33 +10,43 @@ import org.kde.kirigami as Kirigami
 Kirigami.FormLayout {
 	id: root
 
+	//lines to appease kde/fedora qml
 	required property var configDialog
 	required property var wallpaperConfiguration
 
+	//vars fetched from configuration
+	property string cfg_Wallpapers
+	property int cfg_Mode
+
+	//local storage of items from wallpapers initialized to empty
 	property var items: []
 
 	// mode control int 0 = rigid; 1 = smooth
 	property int currentMode: 0
 
-	Kirigami.PromptDialog {
-		id: debugDialog
-		title: "Hourglass Debug"
-		subtitle: "tung tung tung sahur"
-		standardButtons: Kirigami.Dialog.Ok
-	}
 
+	//vars to detect whether replacing image or adding
+	//selected index is selected index
+	property int selectedIndex: 0
+	property bool replacingImage: false
+
+	//this segment loads configuration on start
 	Component.onCompleted: {
 		loadConfig()
 	}
 
+	//loads configuration function
+	//attempts to safely load wallpapers into items as a js object
+	//also updates Mode
 	function loadConfig(){
+		//try catch to update wallpapers
 		try{
-			root.items = JSON.parse(root.wallpaperConfiguration.Wallpapers || "[]")
+			root.items = JSON.parse(cfg_Wallpapers || "[]")
 		} catch (e) {
 			root.items = []
 		}
 
-		//update model
+		//update entryList model
 		entryList.clear()
 		for (let i = 0; i < root.items.length; i++){
 			entryList.append({
@@ -44,27 +54,26 @@ Kirigami.FormLayout {
 				imagePath: root.items[i].path
 			})
 		}
-
-		root.currentMode = root.wallpaperConfiguration.Mode
+		
+		//update mode
+		root.currentMode = cfg_Mode
 	}
 
+	//save config function to save program values into actual configuration files
 	function saveConfig(){
-		if(!root.wallpaperConfiguration){
-			return
-		}
+		root.cfg_Wallpapers = JSON.stringify(root.items)
+		root.cfg_Mode = root.currentMode
 
-		root.wallpaperConfiguration.Wallpapers = JSON.stringify(root.items)
-		root.wallpaperConfiguration.Mode = root.currentMode
-
-		root.configDialog.configurationChanged = true
 	}
 
+	//cool heading
 	Kirigami.Heading {
 		text: "Wallpapers"
 		level: 2
 		Layout.fillWidth: true
 	}
 
+	//declaration for the list of wallpapers
 	Kirigami.AbstractCard {
 		implicitWidth: 500
 		implicitHeight: 300
@@ -77,24 +86,39 @@ Kirigami.FormLayout {
 		}
 	}
 
-
+	//define the list model
 	ListModel{
 		id: entryList
 	}
+
+	//Defines each component of the list
 	Component {
 		id: listDelegate
+
 		Controls.ItemDelegate{
 			id: delegateRoot
+
+			//required properties for item
 			required property string time
 			required property string imagePath
 			required property int index
 
+			//sizing
 			width: ListView.view.width
 			height: 72
 
+			//when an entry is clicked open dialogue to replace image
+			onClicked: {
+				root.selectedIndex = delegateRoot.index
+				root.replacingImage = true;
+				fileDialog.open()
+			}
+
+			//layout for each row
 			contentItem: RowLayout {
 				spacing: 12
 
+				//image properties
 				Image {
 					Layout.preferredWidth: 96
 					Layout.preferredHeight: 54
@@ -102,6 +126,7 @@ Kirigami.FormLayout {
 					source: delegateRoot.imagePath
 				}
 
+				//text information properties
 				Controls.TextField {
 					id: timeField
 
@@ -109,6 +134,7 @@ Kirigami.FormLayout {
 					placeholderText: "00:00"
 					Layout.preferredWidth: 90
 
+					//function to update and check if time is valid
 					function commitTime() {
 						const validTime = root.getValidTime(delegateRoot.index, timeField.text)
 
@@ -120,6 +146,7 @@ Kirigami.FormLayout {
 						root.saveConfig()
 					}
 
+					//when enter clicked unfocus the box and commit
 					onAccepted: {
 						focus = false
 						commitTime()
@@ -131,11 +158,13 @@ Kirigami.FormLayout {
 		}
 	}
 
+	//function to convert string time to minutes
 	function timeToMinutes(time){
 		const parts = time.split(":")
 		return Number(parts[0]) * 60 + Number(parts[1])
 	}
 
+	//function to convert minuts abck to string time
 	function minutesToTime(minutes){
 		minutes = minutes % 1440
 
@@ -146,6 +175,7 @@ Kirigami.FormLayout {
 	}
 
 
+	//function to check for a valid time
 	function getValidTime(currentIndex, newTime) {
 		// Must be exactly HH:MM
 		const timeRegex = /^([0-1][0-9]|2[0-3]):([0-5][0-9])$/
@@ -175,6 +205,7 @@ Kirigami.FormLayout {
 		return newTime
 	}
 
+	//file selection logic based on replacing image or adding new one
 	FileDialog {
 		id: fileDialog
 		title: "Choose wallpaper image"
@@ -182,10 +213,16 @@ Kirigami.FormLayout {
 		nameFilters: ["Images (*.png *.jpg *.jpeg *.webp *.avif)"]
 
 		onAccepted: {
-			root.addWallpaper(selectedFile.toString())
+			if(root.replacingImage){
+				root.replaceWallpaper(selectedFile.toString())
+				root.replacingImage = false
+			}else{
+				root.addWallpaper(selectedFile.toString())
+			}
 		}
 	}
 
+	//bottom buttons layout
 	RowLayout {
 		spacing: 8
 		Controls.Button {
@@ -214,8 +251,7 @@ Kirigami.FormLayout {
 		}
 	}
 
-
-
+	//dialogue to throw if attempting to add past 23:59
 	Kirigami.PromptDialog {
 		id: invalidEntry
 		title: "Hourglass Debug"
@@ -223,6 +259,7 @@ Kirigami.FormLayout {
 		standardButtons: Kirigami.Dialog.Ok
 	}
 
+	//add wallpaper function to check time and add on new entry
 	function addWallpaper(imagePath){
 		if(root.items[root.items.length - 1].time === "23:59"){
 			invalidEntry.open()
@@ -253,6 +290,23 @@ Kirigami.FormLayout {
 
 	}
 
+	//replace wallpaper function
+	function replaceWallpaper(selectedPath){
+		if(root.selectedIndex < 0 || root.selectedIndex >= root.items.length){
+			return
+		}
+		let newItems = root.items.slice()
+		newItems[root.selectedIndex] = {
+			path: selectedPath,
+			time: root.items[root.selectedIndex].time
+		}
+		root.items = newItems
+		entryList.setProperty(root.selectedIndex, "imagePath", selectedPath)
+
+		saveConfig()
+	}
+
+	//remove button
 	function removeLastWallpaper(){
 		if (root.items.length <= 1) {
 			return
