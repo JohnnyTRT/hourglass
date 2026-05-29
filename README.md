@@ -13,7 +13,14 @@ Gradually fades to next image continously. If you want your wallpaper to stay th
 
 ## How to Install
 
-Install via the KDE Plasma 6 official store
+Install via the KDE Plasma 6 official store or through Release v1.0
+
+To install through release v1.0:
+- Download the com.johnsmeds.hourglass.tar.gz file
+- then run the following command in the folder that contains the tar.gz file
+```bash
+kpackagetool6 --type Plasma/Wallpaper -i com.johnsmeds.hourglass.tar.gz
+```
 
 ## How to Use
 ![Hourglass logo](readMeImages/instructionalImage1.png)
